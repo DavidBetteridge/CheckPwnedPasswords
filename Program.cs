@@ -1,16 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace CheckPwnedPasswords
 {
     class Program
     {
-
         static void Main(string[] args)
         {
+            var files = new List<string>() { @"F:\pwned-passwords-1.0.txt", @"F:\pwned-passwords-update-1.txt", @"F:\pwned-passwords-update-2.txt" };
+
             while (true)
             {
                 Console.WriteLine("");
@@ -19,36 +20,24 @@ namespace CheckPwnedPasswords
                 var pwd = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(pwd)) return;
 
-                var sw = new Stopwatch();
-                sw.Start();
-                var result = Check(pwd, @"F:\pwned-passwords-1.0.txt");
-                sw.Stop();
-
-                if (result)
+                foreach (var file in files)
                 {
-                    Console.WriteLine($"{pwd} is in the main list - time taken was {sw.Elapsed.Milliseconds}ms");
-                }
-                else
-                {
-                    Console.WriteLine($"{pwd} is NOT in the main list - time taken was {sw.Elapsed.Milliseconds}ms");
-
-                    sw = new Stopwatch();
+                    var sw = new Stopwatch();
                     sw.Start();
-                    result = Check(pwd, @"F:\pwned-passwords-update-1.txt");
+                    var result = Check(pwd, file);
                     sw.Stop();
+
 
                     if (result)
                     {
-                        Console.WriteLine($"{pwd} is in the update list - time taken was {sw.Elapsed.Milliseconds}ms");
+                        Console.WriteLine($"{pwd} is in {file} - time taken was {sw.Elapsed.Milliseconds}ms");
+                        break;
                     }
                     else
                     {
-                        Console.WriteLine($"{pwd} is NOT in the update list - time taken was {sw.Elapsed.Milliseconds}ms");
+                        Console.WriteLine($"{pwd} is NOT in {file} - time taken was {sw.Elapsed.Milliseconds}ms");
                     }
-
                 }
-
-
             }
         }
 
@@ -64,6 +53,8 @@ namespace CheckPwnedPasswords
             var sha = System.Security.Cryptography.SHA1.Create();
             var passwordBytes = sha.ComputeHash(bytes);
             var asHex = ByteArrayToString(passwordBytes);
+
+            //Length of the SHA1 hash  (we use LINELENGTH+2 is take the newline characters into account)
             const int LINELENGTH = 40;
 
             var buffer = new byte[LINELENGTH];
