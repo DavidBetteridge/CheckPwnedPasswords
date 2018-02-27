@@ -9,39 +9,74 @@ namespace CheckPwnedPasswords
     class Program
     {
         static void Main(string[] args)
-        {
-            var files = new List<string>() { @"F:\pwned-passwords-1.0.txt", @"F:\pwned-passwords-update-1.txt", @"F:\pwned-passwords-update-2.txt" };
+		{
+			List<string> filesToSearch = ProcessArguments(args);
 
-            while (true)
-            {
-                Console.WriteLine("");
-                Console.WriteLine("");
-                Console.WriteLine("Enter password:");
-                var pwd = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(pwd)) return;
+			while (true)
+			{
+				Console.WriteLine("");
+				Console.WriteLine("");
+				Console.WriteLine("Enter password (leave empty to quit):");
+				var pwd = Console.ReadLine();
+				if (string.IsNullOrWhiteSpace(pwd)) return;
 
-                foreach (var file in files)
-                {
-                    var sw = new Stopwatch();
-                    sw.Start();
-                    var result = Check(pwd, file);
-                    sw.Stop();
+				foreach (var file in filesToSearch)
+				{
+					var sw = new Stopwatch();
+					sw.Start();
+					var result = Check(pwd, file);
+					sw.Stop();
 
 
-                    if (result)
-                    {
-                        Console.WriteLine($"{pwd} is in {file} - time taken was {sw.Elapsed.Milliseconds}ms");
-                        break;
-                    }
-                    else
-                    {
-                        Console.WriteLine($"{pwd} is NOT in {file} - time taken was {sw.Elapsed.Milliseconds}ms");
-                    }
-                }
-            }
-        }
+					if (result)
+					{
+						Console.WriteLine($"{pwd} is in {file} - time taken was {sw.Elapsed.Milliseconds}ms");
+						break;
+					}
+					else
+					{
+						Console.WriteLine($"{pwd} is NOT in {file} - time taken was {sw.Elapsed.Milliseconds}ms");
+					}
+				}
+			}
+		}
 
-        static bool Check(string password, string filename)
+		private static List<string> ProcessArguments(string[] args)
+		{
+			List<string> filesToSearch = new List<string>();
+			List<string> directoriesToSearch = new List<string>();
+
+			string baseDataDir = Path.Combine(AppContext.BaseDirectory, "data");
+			if (Directory.Exists(baseDataDir))
+			{
+				directoriesToSearch.Add(baseDataDir);
+			}
+
+			foreach (string arg in args)
+			{
+				if (File.Exists(arg))
+				{
+					filesToSearch.Add(arg);
+				}
+				else if (Directory.Exists(arg))
+				{
+					directoriesToSearch.Add(arg);
+				}
+			}
+
+			foreach (string dir in directoriesToSearch)
+			{
+				string[] filesInDirectory = Directory.GetFiles(dir, "*.*", SearchOption.AllDirectories);
+				foreach (string file in filesInDirectory)
+				{
+					filesToSearch.Add(file);
+				}
+			}
+
+			return filesToSearch;
+		}
+
+		static bool Check(string password, string filename)
         {
             string ByteArrayToString(byte[] ba)
             {
